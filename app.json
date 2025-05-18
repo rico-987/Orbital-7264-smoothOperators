@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "test1",
-    "slug": "test1",
+    "name": "smoothOperators",
+    "slug": "smoothOperators",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "test1",
+    "scheme": "smoothOperators",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
