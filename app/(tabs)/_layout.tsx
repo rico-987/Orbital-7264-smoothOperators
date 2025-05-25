@@ -20,7 +20,7 @@ const _layout = () => {
             
             >
                 <Image
-                    source={require('../../assets/images/home.png')}
+                    source={require('../../assets/icons/home.png')}
                     style={{ width: 20, height: 20}}
                     contentFit="contain"
                 />
@@ -35,7 +35,7 @@ const _layout = () => {
                 title: "Search",
                 tabBarIcon: ({ color, size }) => (
                     <Image
-                        source={require('../../assets/images/search.png')}
+                        source={require('../../assets/icons/search.png')}
                         style={{ width: 20, height: 20 }}
                         contentFit="contain"
                     />
@@ -49,7 +49,7 @@ const _layout = () => {
                   title: "Profile",
                   tabBarIcon: ({ color, size }) => (
                       <Image
-                          source={require('../../assets/images/profile.png')}
+                          source={require('../../assets/icons/profile.png')}
                           style={{ width: 20 , height: 30 }}
                           contentFit="contain"
                       />
