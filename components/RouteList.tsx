@@ -1,11 +1,56 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import {fetchAllBusArrivals, getBusArrival} from './busTimes';
+
+import {View, Text, FlatList, TouchableOpacity, StyleSheet, Alert} from 'react-native';
 
 const RouteList = ({ routes }) => {
     const [expandedIndex, setExpandedIndex] = useState(null);
 
     const toggleExpand = (index) => {
-        setExpandedIndex(prev => (prev === index ? null : index));
+        if (expandedIndex === index){
+            //pop-up to confirm route
+            Alert.alert(
+                "Confirm route",
+                "Do you want to use this route?",
+                [{
+                    text: "Cancel",
+                    style: "cancel",
+                    onPress: () => console.log("Cancel Pressed")
+                },
+                {
+                    text: "OK",
+                    //when user taps ok, we need to use information from Item to buses & bus stops in the trip
+                    //will probably be useful for the bus timings using LTA api
+                    onPress: async () => {
+                        console.log("Route Selected", index + 1);
+                        const selectedRoute = routes[index]
+                        try{
+                            const busLegs = selectedRoute.legs.filter(leg => leg.mode === 'BUS' || leg.mode === "RAIL")
+                            const codesAndServices = busLegs.map(
+                                leg => ({
+                                    code: leg.from.stopCode, //bus stop code
+                                    busNum: leg.route //bus service number
+                                }))
+                            console.log("stops n services:", codesAndServices)
+                            //feed stop code and bus service to LTA data mall api from busTimes
+                            const LiveBusTimes  = await fetchAllBusArrivals(codesAndServices);
+                            console.log(JSON.stringify(LiveBusTimes, null, 2));
+
+                            //idk how to go to the map display with the list of Live bus times
+                            //how to represent the info also
+
+                        }catch(error){
+                            console.error("Failed to fetch live bus times:", error)
+                            Alert.alert("Error: Could not fetch bus times")
+                        }
+                        setExpandedIndex(null);
+                    }
+                }]
+            )
+        }
+            else {
+            setExpandedIndex(index);
+        }
     };
 
     const renderItem = ({ item, index }) => {

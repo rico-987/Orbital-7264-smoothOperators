@@ -6,8 +6,6 @@ import useDirectionsStore from '../../store/directionsStore';
 import getAuthToken from '../../store/authToken';
 import axios from "axios";
 
-
-
 const directions = () => {
     const {authToken} = getAuthToken();
     const [routes, setRoutes] = useState([]);
