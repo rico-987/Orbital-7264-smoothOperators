@@ -1,7 +1,9 @@
 // tabs/Alarms.js or Alarms.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, FlatList, Switch, SafeAreaView, TouchableOpacity, StyleSheet, Modal, TextInput, Button, Pressable } from 'react-native';
 import ProxyAlarm from '../../components/ProxyAlarm';
+import { db } from '../firebase';
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 
 const initialAlarms = [
     { id: '1', label: 'Work', alarmAddress:'Rude', latitude: 1.3521, longitude: 103.8198, radius: 100, active: false },
@@ -20,6 +22,31 @@ export default function AlarmsTab() {
     const toggleAlarm = (id) => {
         setAlarms(alarms.map(a => a.id === id ? { ...a, active: !a.active } : { ...a, active: false }));
     };
+    const saveAlarm = async (alarm) => {
+        try {
+            const docRef = await addDoc(collection(db, 'alarms'), alarm);
+            console.log("Alarm saved with ID: ", docRef.id);
+        } catch (e) {
+            console.error("Error adding alarm: ", e);
+        }
+    };
+    const loadAlarms = async () => {
+        const snapshot = await getDocs(collection(db, 'alarms'));
+        const alarmList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setAlarms(alarmList);
+    };
+
+    useEffect(() => {
+        loadAlarms();
+    }, []);
+    const updateAlarm = async (id, newData) => {
+        const alarmRef = doc(db, 'alarms', id);
+        await updateDoc(alarmRef, newData);
+    };
+    const deleteAlarm = async (id) => {
+        await deleteDoc(doc(db, 'alarms', id));
+    };
+
     const Delete = (id) => {
         Alert.alert(
             'Delete Alarm',
