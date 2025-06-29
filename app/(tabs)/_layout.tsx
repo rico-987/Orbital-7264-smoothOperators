@@ -78,6 +78,20 @@ const _layout = () => {
                 ),
             }}
         />
+        <Tabs.Screen
+            name="roadworks"
+            options={{
+                headerShown: false,
+                title: "Road-Works",
+                tabBarIcon: ({ color, size }) => (
+                    <Image
+                        source={require('../../assets/icons/road.png')}
+                        style={{ width: 20 , height: 30 }}
+                        contentFit="contain"
+                    />
+                ),
+            }}
+        />
     </Tabs>
   )
 }
