@@ -2,25 +2,47 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, FlatList, Switch, SafeAreaView, TouchableOpacity, StyleSheet, Modal, TextInput, Button, Pressable } from 'react-native';
 import ProxyAlarm from '../../components/ProxyAlarm';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { useFocusEffect } from '@react-navigation/native';
+import useAlarmCreationStore from '../../store/AlarmStore';
+import { router } from 'expo-router';
 
-const initialAlarms = [
-    { id: '1', label: 'Work', alarmAddress:'Rude', latitude: 1.3521, longitude: 103.8198, radius: 100, active: false },
 
-    { id: '2', label: 'Home', alarmAddress:'Reservoir', latitude: 1.3001, longitude: 103.844, radius: 150, active: false },
-];
 
 export default function AlarmsTab() {
-    const [alarms, setAlarms] = useState(initialAlarms);
+    // New states
+
+    const [alarms, setAlarms] = useState([]);
     const [alarmOptionsVisible, setAlarmOptionsVisible] = useState(false);
     const [selectedAlarm, setSelectedAlarm] = useState(null);
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [editType, setEditType] = useState(null); // "rename" or "radius"
     const [selectedAlarmId, setSelectedAlarmId] = useState(null);
     const [inputValue, setInputValue] = useState('');
-    const toggleAlarm = (id) => {
-        setAlarms(alarms.map(a => a.id === id ? { ...a, active: !a.active } : { ...a, active: false }));
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newLabel, setNewLabel] = useState('');
+    const [newAddress, setNewAddress] = useState('');
+    const [newCoords, setNewCoords] = useState({ latitude: null, longitude: null });
+    const [newRadius, setNewRadius] = useState('100')
+    const {
+        tempAlarm,
+        setLabel,
+        setRadius,
+        resetAlarm
+    } = useAlarmCreationStore();
+    const toggleAlarm = async (id) => {
+        const updated = alarms.map(alarm =>
+            alarm.id === id
+                ? { ...alarm, active: !alarm.active }
+                : { ...alarm, active: false }
+        );
+
+        setAlarms(updated);
+
+        for (const alarm of updated) {
+            await updateAlarm(alarm.id, { active: alarm.active });
+        }
     };
     const saveAlarm = async (alarm) => {
         try {
@@ -36,13 +58,6 @@ export default function AlarmsTab() {
         setAlarms(alarmList);
     };
 
-    useEffect(() => {
-        loadAlarms();
-    }, []);
-    const updateAlarm = async (id, newData) => {
-        const alarmRef = doc(db, 'alarms', id);
-        await updateDoc(alarmRef, newData);
-    };
     const deleteAlarm = async (id) => {
         await deleteDoc(doc(db, 'alarms', id));
     };
@@ -56,23 +71,56 @@ export default function AlarmsTab() {
                 {
                     text: 'Delete',
                     style: 'destructive',
-                    onPress: () => {
-                        setAlarms(prev => prev.filter(alarm => alarm.id !== id));
+                    onPress: async () => {
+                        await deleteAlarm(id);
+                        loadAlarms();
                     },
                 },
             ]
         );
     };
+    const handleAddAlarm = async () => {
+        const newAlarm = {
+            label: tempAlarm.label,
+            alarmAddress: tempAlarm.address,
+            latitude: tempAlarm.coords.latitude,
+            longitude: tempAlarm.coords.longitude,
+            radius: tempAlarm.radius,
+            active: false,
+        };
+
+        try {
+            const docRef = await addDoc(collection(db, 'alarms'), newAlarm);
+            console.log('Alarm added with ID:', docRef.id);
+
+            await loadAlarms();       // Refresh the alarm list
+            resetAlarm();             // Clear temp state
+            setShowAddModal(false);   // Close modal
+        } catch (error) {
+            console.error('Failed to add alarm:', error);
+            Alert.alert('Error', 'Failed to add alarm.');
+        }
+    };
+
+
     const renderAlarm = ({ item }) => (
-        <TouchableOpacity style={styles.card}
-                          onLongPress={() => {
-                              setSelectedAlarm(item);
-                              setAlarmOptionsVisible(true);
-                          }}>
-            <View>
-                <Text style={styles.title}>{item.label}</Text>
-                <Text>{item.alarmAddress}</Text>
-                <Text>Trigger Radius: {item.radius}m</Text>
+        <TouchableOpacity
+            style={styles.card}
+            onLongPress={() => {
+                setSelectedAlarm(item);
+                setAlarmOptionsVisible(true);
+            }}
+        >
+            <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+                    {item.label}
+                </Text>
+                {item.alarmAddress ? (
+                    <Text numberOfLines={2} ellipsizeMode="tail" style={{ fontSize: 14, color: '#555' }}>
+                        {item.alarmAddress}
+                    </Text>
+                ) : null}
+                <Text style={{ fontSize: 14 }}>Trigger Radius: {item.radius}m</Text>
             </View>
             <Switch value={item.active} onValueChange={() => toggleAlarm(item.id)} />
         </TouchableOpacity>
@@ -86,7 +134,7 @@ export default function AlarmsTab() {
 
             }}
         >
-        <View style={{ width: '100%', backgroundColor: '#e16130', padding: 25 }}>
+        <View style={{ width: '100%', backgroundColor: '#e16130', padding: 25}}>
             <Text style={{ color: 'white', fontSize: 23, fontWeight: 'bold', textAlign: 'center' }}>
                 Alarms
             </Text>
@@ -96,6 +144,9 @@ export default function AlarmsTab() {
             {alarms.map(alarm => alarm.active && (
                 <ProxyAlarm key={alarm.id} target={alarm} active={alarm.active} />
             ))}
+            <TouchableOpacity style={Buttonstyles.addButton} onPress={() => setShowAddModal(true)}>
+                <Text style={Buttonstyles.addButtonText}>Add Alarm</Text>
+            </TouchableOpacity>
             <FlatList
                 data={alarms}
                 keyExtractor={(item) => item.id}
@@ -154,7 +205,7 @@ export default function AlarmsTab() {
                         <Pressable
                             style={{ paddingVertical: 10 }}
                             onPress={() => {
-                                setAlarms(prev => prev.filter(a => a.id !== selectedAlarm.id));
+                                Delete(selectedAlarm.id);
                                 setAlarmOptionsVisible(false);
                             }}
                         >
@@ -219,13 +270,69 @@ export default function AlarmsTab() {
                     </View>
                 </View>
             </Modal>
+            <Modal visible={showAddModal} animationType="slide" transparent>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#00000088' }}>
+                    <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10, width: '90%' }}>
+                        <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10 }}>Create New Alarm</Text>
+
+                        <TextInput
+                            placeholder="Label"
+                            value={tempAlarm.label}
+                            onChangeText={setLabel}
+                            style={inputStyle}
+                        />
+
+                        <TextInput
+                            placeholder="Radius (meters)"
+                            value={tempAlarm.radius.toString()}
+                            onChangeText={(val) => {
+                                const num = parseInt(val);
+                                if (!isNaN(num)) setRadius(num);
+                            }}
+                            style={inputStyle}
+                            keyboardType="numeric"
+                        />
+
+                        <TouchableOpacity
+                            onPress={() => router.push('/search?type=alarm')}
+                            style={{ marginBottom: 10 }}
+                        >
+                            <Text style={{ color: 'blue' }}>
+                                {tempAlarm.address ? tempAlarm.address : 'Set Alarm Address'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    resetAlarm();
+                                    setShowAddModal(false);
+                                }}
+                                style={{ ...buttonStyle, backgroundColor: 'grey' }}
+                            >
+                                <Text style={{ color: 'white' }}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => handleAddAlarm(tempAlarm)}
+                                style={{ ...buttonStyle, backgroundColor: '#e16130' }}
+                            >
+                                <Text style={{ color: 'white' }}>Add</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+
+
+
         </View>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 16 },
+    container: { flex: 1, padding: 16},
     card: {
         backgroundColor: '#fff',
         padding: 14,
@@ -236,5 +343,34 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     title: { fontSize: 16, fontWeight: 'bold' },
+});
+const inputStyle = {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+};
+
+const buttonStyle = {
+    flex: 1,
+    alignItems: 'center',
+    padding: 10,
+    marginHorizontal: 5,
+    borderRadius: 5,
+};
+const Buttonstyles = StyleSheet.create({
+    addButton: {
+        backgroundColor: '#e16130',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    addButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
 });
 
