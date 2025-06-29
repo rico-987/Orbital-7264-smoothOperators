@@ -57,9 +57,18 @@ export default function AlarmsTab() {
         const alarmList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setAlarms(alarmList);
     };
+    useFocusEffect(
+        React.useCallback(() => {
+            loadAlarms();
+        }, [])
+    );
 
     const deleteAlarm = async (id) => {
         await deleteDoc(doc(db, 'alarms', id));
+    };
+    const updateAlarm = async (id, data) => {
+        const ref = doc(db, 'alarms', id);
+        await updateDoc(ref, data);
     };
 
     const Delete = (id) => {
@@ -255,7 +264,27 @@ export default function AlarmsTab() {
 
                         <Pressable
                             style={{ paddingVertical: 10 }}
-                            onPress={() => null}
+                            onPress={async () => {
+                                try {
+                                    if (editType === 'rename') {
+                                        await updateAlarm(selectedAlarmId, { label: inputValue });
+                                    } else if (editType === 'radius') {
+                                        const radiusValue = parseInt(inputValue);
+                                        if (!isNaN(radiusValue)) {
+                                            await updateAlarm(selectedAlarmId, { radius: radiusValue });
+                                        } else {
+                                            Alert.alert("Invalid radius", "Please enter a number.");
+                                            return;
+                                        }
+                                    }
+
+                                    setEditModalVisible(false);
+                                    await loadAlarms(); // Refresh the updated values
+                                } catch (error) {
+                                    console.error('Update failed:', error);
+                                    Alert.alert('Error', 'Failed to update alarm.');
+                                }
+                            }}
                         >
                             <Text>Save</Text>
                         </Pressable>
