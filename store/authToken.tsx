@@ -2,6 +2,6 @@ import {create} from 'zustand';
 
 const getAuthToken = create(set => ({
     authToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1MDc2YTM3YTk5N2YwYzVlNDM0OThjYzA0NTg2MWZmYSIsImlzcyI6Imh0dHA6Ly9pbnRlcm5hbC1hbGItb20tcHJkZXppdC1pdC1uZXctMTYzMzc5OTU0Mi5hcC1zb3V0aGVhc3QtMS5lbGIuYW1hem9uYXdzLmNvbS9hcGkvdjIvdXNlci9wYXNzd29yZCIsImlhdCI6MTc1MTIxNDQ4MywiZXhwIjoxNzUxNDczNjgzLCJuYmYiOjE3NTEyMTQ0ODMsImp0aSI6InkzSEdUZ29WOWVyVEVDSmQiLCJ1c2VyX2lkIjo3Mjk3LCJmb3JldmVyIjpmYWxzZX0.KcfJeSUzj_muF2p_G_6VnE808LUCNzPj-pS2zhrQNng',
-}));
+
 
 export default getAuthToken;
