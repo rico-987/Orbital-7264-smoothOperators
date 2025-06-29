@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import {fetchAllBusArrivals, getBusArrival} from './busTimes';
+import { fetchAllBusArrivals, getBusArrival } from './busTimes';
 
-import {View, Text, FlatList, TouchableOpacity, StyleSheet, Alert} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 
 const RouteList = ({ routes }) => {
     const [expandedIndex, setExpandedIndex] = useState(null);
+    const [liveBusInfo, setLiveBusInfo] = useState(null); // To store fetched bus info
 
     const toggleExpand = (index) => {
-        if (expandedIndex === index){
+        if (expandedIndex === index) {
             //pop-up to confirm route
             Alert.alert(
                 "Confirm route",
@@ -17,38 +18,43 @@ const RouteList = ({ routes }) => {
                     style: "cancel",
                     onPress: () => console.log("Cancel Pressed")
                 },
-                {
-                    text: "OK",
-                    //when user taps ok, we need to use information from Item to buses & bus stops in the trip
-                    //will probably be useful for the bus timings using LTA api
-                    onPress: async () => {
-                        console.log("Route Selected", index + 1);
-                        const selectedRoute = routes[index]
-                        try{
-                            const busLegs = selectedRoute.legs.filter(leg => leg.mode === 'BUS' || leg.mode === "RAIL")
-                            const codesAndServices = busLegs.map(
-                                leg => ({
+                    {
+                        text: "OK",
+                        //when user taps ok, we need to use information from Item to buses & bus stops in the trip
+                        //will probably be useful for the bus timings using LTA api
+                        onPress: async () => {
+                            console.log("Route Selected", index + 1);
+                            const selectedRoute = routes[index]
+                            try {
+                                const busLegs = selectedRoute.legs.filter(leg => leg.mode === 'BUS')
+                                //this filters out the legs that use buses using OneMap api
+                                const codesAndServices = busLegs.map(leg => ({
                                     code: leg.from.stopCode, //bus stop code
                                     busNum: leg.route //bus service number
                                 }))
-                            console.log("stops n services:", codesAndServices)
-                            //feed stop code and bus service to LTA data mall api from busTimes
-                            const LiveBusTimes  = await fetchAllBusArrivals(codesAndServices);
-                            console.log(JSON.stringify(LiveBusTimes, null, 2));
-
-                            //idk how to go to the map display with the list of Live bus times
-                            //how to represent the info also
-
-                        }catch(error){
-                            console.error("Failed to fetch live bus times:", error)
-                            Alert.alert("Error: Could not fetch bus times")
+                                console.log("stops n services:", codesAndServices)
+                                //feed stop code and bus service to LTA data mall api from busTimes
+                                const LiveBusTimes = await fetchAllBusArrivals(codesAndServices);
+                                //contains bus time info from arrivelah
+                                const stopNames = busLegs.map(leg => leg.from.name)
+                                //contains bus stop names
+                                console.log(JSON.stringify(LiveBusTimes, null, 2));
+                                console.log(JSON.stringify(stopNames, null, 2));
+                                const displayInfo = LiveBusTimes.map((item, index) => ({
+                                    stopName: stopNames[index],
+                                    ...item,
+                                }));
+                                console.log(JSON.stringify(displayInfo, null, 2));
+                                setLiveBusInfo(displayInfo); // switch UI to display live bus info
+                            } catch (error) {
+                                console.error("Failed to fetch live bus times:", error)
+                                Alert.alert("Error: Could not fetch bus times")
+                            }
+                            setExpandedIndex(null);
                         }
-                        setExpandedIndex(null);
-                    }
-                }]
+                    }]
             )
-        }
-            else {
+        } else {
             setExpandedIndex(index);
         }
     };
@@ -59,12 +65,12 @@ const RouteList = ({ routes }) => {
         const walkTimeMin = Math.round(item.walkTime / 60);
         const transitTimeMin = Math.round(item.transitTime / 60);
         const fare = item.fare || "N/A";
+
         return (
             <TouchableOpacity
                 onPress={() => toggleExpand(index)}
                 style={styles.card}
             >
-
                 <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Route {index + 1}</Text>
                 <Text>Total Duration: {durationMin} min</Text>
                 <Text>Walk Time: {walkTimeMin} min</Text>
@@ -86,14 +92,47 @@ const RouteList = ({ routes }) => {
             </TouchableOpacity>
         );
     };
+    const minsTillNextBus = (timestamp) =>{
+        if (!timestamp) return 'No More Buses';
+        const arrivalTime = new Date(timestamp);
+        const timeNow = new Date();
+        const diff = arrivalTime.getTime() - timeNow.getTime();
+        const diffMin = Math.max(Math.round(diff / 60000), 0);
+        return `${diffMin} min`;
+
+    }
+
+    const renderLiveBusItem = ({ item }) => (
+        <View style={styles.card}>
+            <Text style={styles.header}>
+                Bus Stop: {item.stopID} ({item.stopName})
+            </Text>
+            <Text>Service No: {item.busID}</Text>
+            <Text>Next Bus: {minsTillNextBus(item.nextTiming) || 'N/A'}</Text>
+            <Text>Next 2nd Bus: {minsTillNextBus(item.next2Timing) || 'N/A'}</Text>
+            <Text>Next 3rd Bus: {minsTillNextBus(item.next3Timing) || 'N/A'}</Text>
+        </View>
+    );
 
     return (
-        <FlatList
-            data={routes}
-            keyExtractor={(_, index) => index.toString()}
-            renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 100 }}
-        />
+        <View style={{ flex: 1 }}>
+            {/* Show back button when viewing live timings */}
+            {liveBusInfo && (
+                <TouchableOpacity
+                    onPress={() => setLiveBusInfo(null)}
+                    style={[styles.card, { backgroundColor: '#fff3e0' }]}
+                >
+                    <Text style={{ color: 'blue' }}>← Back to Route Selection</Text>
+                </TouchableOpacity>
+            )}
+
+            <FlatList
+                data={liveBusInfo || routes}
+                keyExtractor={(_, index) => index.toString()}
+                renderItem={liveBusInfo ? renderLiveBusItem : renderItem}
+                contentContainerStyle={{ paddingBottom: 100 }}
+            />
+        </View>
     );
 };
 

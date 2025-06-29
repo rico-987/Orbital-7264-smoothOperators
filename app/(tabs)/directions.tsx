@@ -40,7 +40,7 @@ const directions = () => {
                     routeType: 'pt',
                     date: date,
                     time: time,
-                    mode: 'TRANSIT',
+                    mode: 'BUS',
 
                 }
             });
