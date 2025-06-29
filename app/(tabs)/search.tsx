@@ -4,22 +4,37 @@ import Feather from 'react-native-vector-icons/Feather';
 import {router, useLocalSearchParams} from "expo-router";
 import SearchFilter from "../../components/SearchFilter";
 import useDirectionsStore from '../../store/directionsStore';
-
+import useAlarmCreationStore from "../../store/AlarmStore";
 
 
 const search = () => {
     const [input, setInput] = useState('');
     const { type } = useLocalSearchParams(); // value is 'start' or 'end'
     const { setStart, setEnd ,setStartCoords, setEndCoords} = useDirectionsStore();
-    const handleAddressSelect = (address) => {
-        if (type === 'start') setStart(address);
-        else setEnd(address);
+    const {setAddress, setCoordinates} = useAlarmCreationStore();
 
-        router.replace('/directions'); // or router.push('/directions') if needed
+    const handleAddressSelect = (address) => {
+        if (type === 'start') {
+            setStart(address);
+            router.replace('/directions');
+        }
+        else if (type === 'end') {
+            setEnd(address);
+            router.replace('/directions');
+        }
+        else if (type === 'alarm') {
+            setAddress(address);
+            router.replace('/alarms');
+        }
+
+         // or router.push('/directions') if needed
     };
-    const setCoords = (coords) => {
-        if (type === 'start') setStartCoords(coords);
-        else setEndCoords(coords);
+    const setCoords = (lat , long) => {
+        if (type === 'start') setStartCoords(lat + ',' + long);
+        else if (type === 'end') setEndCoords(lat + ',' + long);
+        else if (type === 'alarm') {
+            setCoordinates({latitude:lat, longitude:long});
+        }
     }
     return (
       <SafeAreaView

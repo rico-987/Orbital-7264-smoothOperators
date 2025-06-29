@@ -59,7 +59,7 @@ const SearchFilter = ({input, setInput, onSelect, setCoords}) => {
                         }}
                         onPress={() => {
                             if (onSelect) {
-                                setCoords(item.LATITUDE + ',' + item.LONGITUDE);
+                                setCoords(item.LATITUDE, item.LONGITUDE);
                                 onSelect(item.ADDRESS); // Callback to set the value and return
 
                             }
