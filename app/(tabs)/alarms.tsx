@@ -6,7 +6,7 @@ import { db } from '../../firebase';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 import useAlarmCreationStore from '../../store/AlarmStore';
-import { router } from 'expo-router';
+import { router,useLocalSearchParams  } from 'expo-router';
 
 
 
@@ -29,8 +29,38 @@ export default function AlarmsTab() {
         tempAlarm,
         setLabel,
         setRadius,
-        resetAlarm
+        resetAlarm,
+        setAddress,
+        setCoordinates
     } = useAlarmCreationStore();
+    const { openAddModal, legData } = useLocalSearchParams();
+
+    useEffect(() => {
+        if (openAddModal === 'true') {
+            // If legData exists, parse and prefill tempAlarm store
+            if (legData) {
+                try {
+                    const leg = JSON.parse(legData);
+                    const lat = leg.from.lat ? parseFloat(leg.from.lat) : null;
+                    const lon = leg.from.lon ? parseFloat(leg.from.lon) : null;
+                    // Example: prefill label with leg.from.name, address with leg.from.name, and coords
+                    setAddress(leg.to.name || '');
+                    // If you have address info, set it similarly (adjust keys accordingly)
+                    // setAddress(leg.from.name || ''); // if you have setAddress in your store
+                    if (lat !== null && lon !== null && !isNaN(lat) && !isNaN(lon)) {
+                        setCoordinates({ latitude: lat, longitude: lon });
+                    } else {
+                        // handle missing or invalid coordinates
+                        setCoordinates({ latitude: null, longitude: null });
+                    }
+                    setRadius(100); // default radius or customize as you like
+                } catch (e) {
+                    console.warn("Failed to parse legData param", e);
+                }
+            }
+            setShowAddModal(true);
+        }
+    }, [openAddModal, legData]);
     const toggleAlarm = async (id) => {
         const updated = alarms.map(alarm =>
             alarm.id === id

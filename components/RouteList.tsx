@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { fetchAllBusArrivals, getBusArrival } from './busTimes';
-
+import { router } from 'expo-router';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 
 const RouteList = ({ routes }) => {
     const [expandedIndex, setExpandedIndex] = useState(null);
     const [liveBusInfo, setLiveBusInfo] = useState(null); // To store fetched bus info
-
+    const [selectedRoute, setSelectedRoute] = useState(null);
     const toggleExpand = (index) => {
         if (expandedIndex === index) {
             //pop-up to confirm route
@@ -25,6 +25,7 @@ const RouteList = ({ routes }) => {
                         onPress: async () => {
                             console.log("Route Selected", index + 1);
                             const selectedRoute = routes[index]
+                            setSelectedRoute(selectedRoute);
                             try {
                                 const busLegs = selectedRoute.legs.filter(leg => leg.mode === 'BUS')
                                 //this filters out the legs that use buses using OneMap api
@@ -72,21 +73,32 @@ const RouteList = ({ routes }) => {
                 style={styles.card}
             >
                 <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Route {index + 1}</Text>
-                <Text>Total Duration: {durationMin} min</Text>
-                <Text>Walk Time: {walkTimeMin} min</Text>
-                <Text>Transit Time: {transitTimeMin} min</Text>
-                <Text>Fare: ${fare}</Text>
+                {!isExpanded && (<Text>
+                    ⏱ {durationMin} min | 🚶 {walkTimeMin} min | 🚌 {transitTimeMin} min | 💵 ${fare}
+                </Text>)}
 
                 {isExpanded && (
                     <View style={styles.legsContainer}>
+                        <Text>⏱Total Duration: {durationMin} min</Text>
+                        <Text>🚶Walk Time: {walkTimeMin} min</Text>
+                        <Text>🚌Transit Time: {transitTimeMin} min</Text>
+                        <Text>💵Fare: ${fare}</Text>
+
                         <Text style={styles.subHeader}>Legs:</Text>
                         {item.legs.map((leg, i) => (
-                            <View key={i} style={styles.legItem}>
-                                <Text>• {leg.mode}{leg.route ? ` - ${leg.route}` : ''}</Text>
-                                <Text>  {leg.from.name} → {leg.to.name}</Text>
-                                <Text>  {Math.round(leg.duration / 60)} min</Text>
+                            <View key={i} style={[
+                                styles.legItem,
+                                { backgroundColor: leg.mode === 'WALK' ? '#fff3e0' : '#C3B1E1', padding: 8, borderRadius: 6 }
+                            ]}>
+                                <Text style={{ fontSize: 15 }}>
+                                    {getIcon(leg.mode)} {leg.mode === 'BUS' ? `Take Bus ${leg.route}` : 'Walk'}
+                                </Text>
+                                <Text style={{ fontSize: 14, color: '#555' }}>
+                                    from "{leg.from.name}" → "{leg.to.name}" ({Math.round(leg.duration / 60)} min)
+                                </Text>
                             </View>
                         ))}
+
                     </View>
                 )}
             </TouchableOpacity>
@@ -119,12 +131,41 @@ const RouteList = ({ routes }) => {
             {/* Show back button when viewing live timings */}
             {liveBusInfo && (
                 <TouchableOpacity
-                    onPress={() => setLiveBusInfo(null)}
+                    onPress={() => {
+                        setLiveBusInfo(null);
+                    }}
                     style={[styles.card, { backgroundColor: '#fff3e0' }]}
                 >
                     <Text style={{ color: 'blue' }}>← Back to Route Selection</Text>
                 </TouchableOpacity>
             )}
+            {selectedRoute && liveBusInfo && (
+            <View style={[styles.card, { backgroundColor: '#fffde7' }]}>
+                <Text style={styles.header}>Selected Route Summary</Text>
+                {selectedRoute.legs.map((leg, i) => (
+                    <TouchableOpacity
+                        key={i}
+                        style={styles.legTouchable}
+                        onPress={() => {
+                            router.push({
+                                pathname: '/alarms',
+                                params: {
+                                    openAddModal: true,
+                                    legData: JSON.stringify(leg),
+                                }
+                            });
+                        }}
+                    >
+                        <Text style={styles.legTitle}>
+                            {getIcon(leg.mode)} {leg.mode === 'BUS' ? `Take Bus ${leg.route}` : 'Walk'}
+                        </Text>
+                        <Text style={styles.legSubtext}>
+                            {leg.from.name} → {leg.to.name} ({Math.round(leg.duration / 60)} min)
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+        )}
 
             <FlatList
                 data={liveBusInfo || routes}
@@ -135,7 +176,14 @@ const RouteList = ({ routes }) => {
         </View>
     );
 };
-
+const getIcon = (mode) => {
+    switch (mode) {
+        case 'BUS': return '🚌';
+        case 'WALK': return '🚶';
+        case 'MRT': return '🚇';
+        default: return '❓';
+    }
+};
 const styles = StyleSheet.create({
     card: {
         backgroundColor: '#e0f7fa',
@@ -160,6 +208,23 @@ const styles = StyleSheet.create({
     legItem: {
         marginTop: 6,
     },
+    legTouchable: {
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 6,
+        backgroundColor: '#f0f0f0',
+    },
+
+    legTitle: {
+        fontWeight: '600',
+        fontSize: 15,
+    },
+
+    legSubtext: {
+        color: '#555',
+        fontSize: 13,
+    },
 });
+
 
 export default RouteList;
