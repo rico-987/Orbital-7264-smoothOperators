@@ -13,6 +13,6 @@ TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }) => {
     if (locations.length > 0) {
         const { latitude, longitude } = locations[0].coords;
         console.log("Background Location:", latitude, longitude);
-        // You can check proximity here or store the data
+
     }
 });

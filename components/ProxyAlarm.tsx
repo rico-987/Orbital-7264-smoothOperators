@@ -35,7 +35,7 @@ const ProxyAlarm = ({ target, active }) => {
     const checkProximity = (lat, lon) => {
         const radius = target?.radius || 100;
         const distance = getDistance(lat, lon, target.latitude, target.longitude);
-        console.log(`📏 Distance to target: ${distance}m`);
+        console.log(`Distance to target: ${distance}m`);
         if (distance < radius) {
             triggerAlarm();
         }
