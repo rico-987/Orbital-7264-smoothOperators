@@ -5,7 +5,7 @@ import {router, useLocalSearchParams} from "expo-router";
 import getAuthToken from '../store/authToken';
 
 
-const SearchFilter = ({input, setInput, onSelect, setCoords}) => {
+const SearchFilter = ({input, setInput, onSelect, setCoords, mode}) => {
 
     const {authToken} = getAuthToken();
     const [results, setResults] = useState([]);
@@ -26,6 +26,18 @@ const SearchFilter = ({input, setInput, onSelect, setCoords}) => {
                 }
             );
             setResults(response.data.results || []);
+
+            let fetchedResults = response.data.results || [];
+
+            // --- FILTER RESULTS FOR BUS STOP MODE ONLY ---
+                        if (mode === 'busStop') {
+                            fetchedResults = fetchedResults.filter(item =>
+                                item.SEARCHVAL && item.SEARCHVAL.endsWith('(BUS STOP)') // assuming bus stops have SEARCHVAL starting with 'BS'
+                            );
+                        }
+            // --- END FILTER ---
+
+            setResults(fetchedResults);
 
 
         } catch (error) {
@@ -58,7 +70,12 @@ const SearchFilter = ({input, setInput, onSelect, setCoords}) => {
                             marginBottom: 10,
                         }}
                         onPress={() => {
-                            if (onSelect) {
+                            if (mode === 'busStop') {
+                                const id = '01012';
+                                console.log(id)
+                                onSelect(id);  // pass ID like "51003"
+                            }
+                            else if (onSelect) {
                                 setCoords(item.LATITUDE, item.LONGITUDE);
                                 onSelect(item.ADDRESS); // Callback to set the value and return
 

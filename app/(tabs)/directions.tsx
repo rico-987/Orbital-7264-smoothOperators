@@ -82,13 +82,8 @@ const directions = () => {
                     <Text style={{ marginLeft: 10 }}>{destPlaceHolder}</Text>
                 </Pressable>
             </View>
-            <View style={{ backgroundColor: 'white', padding: 16 }}>
-                <Text style={{ color: 'darkgrey', fontSize: 15, fontWeight: 'bold', textAlign: 'left' }}>
-                    Recommended routes
-                </Text>
-            </View>
             {canFindRoute && (
-                <View style={{ padding: 16, backgroundColor: 'white' }}>
+                <View style={{ padding: 10, backgroundColor: 'white' }}>
                     <TouchableHighlight
                         onPress={() => {
                             // Add your navigation or route logic here
@@ -109,7 +104,7 @@ const directions = () => {
 
 
             )}
-            <View style={{flex: 1, backgroundColor: 'white', padding: 16 }}>
+            <View style={{flex: 1, backgroundColor: 'white', paddingHorizontal:16, padding:0}}>
                 <RouteList routes={routes} />
             </View>
         </SafeAreaView>
