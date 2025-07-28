@@ -88,6 +88,7 @@ const Search = () => {
                     setInput={setInput}
                     onSelect={handleAddressSelect}
                     setCoords={setCoords}
+                    mode='normal'
                 />
             </View>
         </SafeAreaView>

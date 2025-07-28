@@ -1,18 +1,27 @@
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
+import { Audio } from 'expo-av';
+import * as Haptics from 'expo-haptics';
 
-const LOCATION_TASK_NAME = 'background-location-task';
+const GEOFENCING_TASK = 'geofencing-task';
 
-TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }) => {
+TaskManager.defineTask(GEOFENCING_TASK, async ({ data: { eventType, region }, error }) => {
     if (error) {
-        console.error(error);
+        console.error('Geofencing task error:', error);
         return;
     }
 
-    const { locations } = data;
-    if (locations.length > 0) {
-        const { latitude, longitude } = locations[0].coords;
-        console.log("Background Location:", latitude, longitude);
+    if (eventType === Location.GeofencingEventType.Enter) {
+        console.log('Entered region:', region.identifier);
 
+        try {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            const { sound } = await Audio.Sound.createAsync(
+                require('../assets/alarms/mixkit-security-facility-breach-alarm-994.wav')
+            );
+            await sound.playAsync();
+        } catch (err) {
+            console.error('Failed to trigger alarm sound:', err);
+        }
     }
 });

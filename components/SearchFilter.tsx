@@ -29,13 +29,13 @@ const SearchFilter = ({input, setInput, onSelect, setCoords, mode}) => {
 
             let fetchedResults = response.data.results || [];
 
-            // --- FILTER RESULTS FOR BUS STOP MODE ONLY ---
-                        if (mode === 'busStop') {
-                            fetchedResults = fetchedResults.filter(item =>
-                                item.SEARCHVAL && item.SEARCHVAL.endsWith('(BUS STOP)') // assuming bus stops have SEARCHVAL starting with 'BS'
-                            );
-                        }
-            // --- END FILTER ---
+
+            if (mode === 'busStop') {
+                fetchedResults = fetchedResults.filter(item =>
+                    item.SEARCHVAL && item.SEARCHVAL.endsWith('(BUS STOP)') // assuming bus stops have SEARCHVAL starting with 'BS'
+                );
+            }
+
 
             setResults(fetchedResults);
 
@@ -71,9 +71,7 @@ const SearchFilter = ({input, setInput, onSelect, setCoords, mode}) => {
                         }}
                         onPress={() => {
                             if (mode === 'busStop') {
-                                const id = '01012';
-                                console.log(id)
-                                onSelect(id);  // pass ID like "51003"
+                                onSelect(item);  // pass ID like "51003"
                             }
                             else if (onSelect) {
                                 setCoords(item.LATITUDE, item.LONGITUDE);

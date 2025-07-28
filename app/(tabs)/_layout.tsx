@@ -64,14 +64,15 @@ const _layout = () => {
                 ),
             }}
         />
+
         <Tabs.Screen
-            name="profile"
+            name="busstops"
             options={{
                 headerShown: false,
-                title: "Profile",
+                title: "Bus Stop",
                 tabBarIcon: ({ color, size }) => (
                     <Image
-                        source={require('../../assets/icons/profile.png')}
+                        source={require('../../assets/icons/busStopIcon.png')}
                         style={{ width: 20 , height: 30 }}
                         contentFit="contain"
                     />
@@ -79,19 +80,19 @@ const _layout = () => {
             }}
         />
         <Tabs.Screen
-            name="roadworks"
-            options={{
-                headerShown: false,
-                title: "Road-Works",
-                tabBarIcon: ({ color, size }) => (
-                    <Image
-                        source={require('../../assets/icons/road.png')}
-                        style={{ width: 20 , height: 30 }}
-                        contentFit="contain"
-                    />
-                ),
-            }}
-        />
+        name="profile"
+        options={{
+            headerShown: false,
+            title: "Profile",
+            tabBarIcon: ({ color, size }) => (
+                <Image
+                    source={require('../../assets/icons/profile.png')}
+                    style={{ width: 20 , height: 30 }}
+                    contentFit="contain"
+                />
+            ),
+        }}
+    />
     </Tabs>
   )
 }
