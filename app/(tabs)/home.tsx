@@ -20,12 +20,18 @@ export default function Home() {
         setSelectedOption(option);
     };
 
-    useEffect(() => { //Permissions for using location
+    useEffect(() => {
         (async () => {
-            const { status } = await Location.requestForegroundPermissionsAsync();
-            if (status === 'granted') {
-                setPermissionGranted(true);
-            }
+            // Request foreground permissions
+            const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
+            if (fgStatus !== 'granted') return;
+
+            // Request background permissions
+            const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
+            if (bgStatus !== 'granted') return;
+
+            // If both are granted
+            setPermissionGranted(true);
         })();
     }, []);
 
