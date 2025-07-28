@@ -141,6 +141,7 @@ export default function AlarmsTab() {
     );
 
     const renderAlarm = ({ item }) => (
+        <View>
         <TouchableOpacity
             style={styles.card}
             onLongPress={() => {
@@ -155,6 +156,10 @@ export default function AlarmsTab() {
             </View>
             <Switch value={item.active} onValueChange={() => toggleAlarm(item.id)} />
         </TouchableOpacity>
+        {item.active && (
+            <ProxyAlarm key={item.id} target={item} active={item.active} />
+        )}
+        </View>
     );
 
     return (
